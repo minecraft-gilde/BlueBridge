@@ -1,23 +1,19 @@
-name: Plugin CI
+name: Plugin Release
 
 on:
   push:
-    branches:
-      - '**'
-    tags-ignore:
-      - '**'
-  pull_request:
-  workflow_dispatch:
+    tags:
+      - 'v*'
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
-  group: plugin-ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: plugin-release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
 
     steps:
@@ -37,9 +33,10 @@ jobs:
       - name: Build plugin
         run: ./gradlew --no-daemon build
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
         with:
-          name: BlueBridge-${{ github.sha }}
-          path: build/target/*
-          if-no-files-found: error
+          name: BlueBridge ${{ github.ref_name }}
+          generate_release_notes: true
+          files: build/target/*.jar
+          fail_on_unmatched_files: true
