@@ -2,14 +2,10 @@ package de.mark225.bluebridge.core.util;
 
 import org.apache.commons.text.lookup.StringLookup;
 
+@SuppressWarnings("deprecation")
 public abstract class StringLookupWrapper {
 
-    public final StringLookup lookup = new StringLookup() {
-        @Override
-        public String lookup(String key) {
-            return replace(key);
-        }
-    };
+    public final StringLookup lookup = this::replace;
 
     public abstract String replace(String in);
 }

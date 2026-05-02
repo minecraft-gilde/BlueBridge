@@ -22,5 +22,5 @@ public abstract class BlueBridgeAddon {
 
     public abstract void reload();
 
-    public abstract boolean isActiveAddon();
+    public abstract boolean usesEventUpdates();
 }

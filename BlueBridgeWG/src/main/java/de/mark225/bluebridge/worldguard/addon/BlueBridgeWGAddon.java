@@ -47,7 +47,7 @@ public class BlueBridgeWGAddon extends BlueBridgeAddon {
     }
 
     @Override
-    public boolean isActiveAddon() {
+    public boolean usesEventUpdates() {
         return false;
     }
 }

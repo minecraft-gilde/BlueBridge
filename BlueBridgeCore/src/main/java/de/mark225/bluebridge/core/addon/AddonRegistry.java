@@ -31,8 +31,12 @@ public class AddonRegistry {
         return null;
     }
 
-    public static List<BlueBridgeAddon> getIfActive(boolean active) {
-        return registeredAddons.stream().filter(addon -> active == addon.isActiveAddon()).collect(Collectors.toList());
+    public static List<BlueBridgeAddon> getEventDrivenAddons() {
+        return registeredAddons.stream().filter(BlueBridgeAddon::usesEventUpdates).collect(Collectors.toList());
+    }
+
+    public static List<BlueBridgeAddon> getPollingAddons() {
+        return registeredAddons.stream().filter(addon -> !addon.usesEventUpdates()).collect(Collectors.toList());
     }
 
 

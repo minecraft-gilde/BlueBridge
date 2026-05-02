@@ -69,7 +69,7 @@ public class UpdateTask implements Runnable {
             return;
         }
 
-        List<BlueBridgeAddon> addons = AddonRegistry.getIfActive(false);
+        List<BlueBridgeAddon> addons = AddonRegistry.getPollingAddons();
         ConcurrentMap<String, ConcurrentMap<String, RegionSnapshot>> newSnapshots = new ConcurrentHashMap<>();
         for (BlueBridgeAddon addon : addons) {
             if(addon.supportsAsync()) continue;

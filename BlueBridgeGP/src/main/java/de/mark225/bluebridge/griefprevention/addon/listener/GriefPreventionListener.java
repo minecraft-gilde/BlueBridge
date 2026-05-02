@@ -35,12 +35,9 @@ public class GriefPreventionListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onClaimExtend(ClaimExtendEvent e) {
         if (BlueBridgeConfig.debug())
-            BlueBridgeGP.getInstance().getLogger().log(Level.INFO, "Claim extended " + e.getTo().getID());
+            BlueBridgeGP.getInstance().getLogger().log(Level.INFO, "Claim extended " + e.getFrom().getID());
         if (e.isCancelled()) return;
-        Claim claim = e.getTo();
-        while (claim.parent != null)
-            claim = claim.parent;
-        scheduleUpdate(e.getTo());
+        scheduleUpdate(e.getFrom());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
