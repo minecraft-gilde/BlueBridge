@@ -12,7 +12,9 @@ import de.mark225.bluebridge.core.scheduler.FoliaScheduler;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -91,13 +93,10 @@ public class UpdateTask implements Runnable {
     }
 
     private void collectSnapshots(BlueBridgeAddon addon, ConcurrentMap<String, ConcurrentMap<String, RegionSnapshot>> newSnapshots){
+        newSnapshots.putIfAbsent(addon.name(), new ConcurrentHashMap<>());
         for (UUID world : worlds.keySet()) {
             ConcurrentMap<String, RegionSnapshot> worldSnapshots = addon.fetchSnapshots(world);
-            if (newSnapshots.containsKey(addon.name())) {
-                newSnapshots.get(addon.name()).putAll(worldSnapshots);
-            } else {
-                newSnapshots.put(addon.name(), worldSnapshots);
-            }
+            newSnapshots.get(addon.name()).putAll(worldSnapshots);
         }
     }
 
@@ -111,30 +110,23 @@ public class UpdateTask implements Runnable {
     private void doUpdate(ConcurrentMap<String, ConcurrentMap<String, RegionSnapshot>> newSnapshots) {
         List<RegionSnapshot> addedOrUpdated = new ArrayList<>();
         List<RegionSnapshot> removed = new ArrayList<>();
-        newSnapshots.forEach((addon, regionMap) -> {
-            ConcurrentMap<String, RegionSnapshot> lr = lastSnapshots.get(addon);
-            if (lr == null)
-                lr = new ConcurrentHashMap<>();
+        Set<String> addonKeys = new HashSet<>(lastSnapshots.keySet());
+        addonKeys.addAll(newSnapshots.keySet());
+        addonKeys.forEach(addon -> {
+            ConcurrentMap<String, RegionSnapshot> regionMap = newSnapshots.getOrDefault(addon, new ConcurrentHashMap<>());
+            ConcurrentMap<String, RegionSnapshot> lastRegionMap = lastSnapshots.getOrDefault(addon, new ConcurrentHashMap<>());
 
-            final ConcurrentMap<String, RegionSnapshot> lastRegionMap = lr;
-
-            List<RegionSnapshot> unchangedOrUpdated = new ArrayList<>();
             lastRegionMap.forEach((oldKey, region) -> {
                 if (!regionMap.containsKey(oldKey)) {
                     removed.add(region);
                 }
             });
             regionMap.forEach((key, region) -> {
-                if (!lastRegionMap.containsKey(key)) {
+                RegionSnapshot lastRegion = lastRegionMap.get(key);
+                if (lastRegion == null || !lastRegion.equals(region)) {
                     addedOrUpdated.add(region);
-                } else {
-                    unchangedOrUpdated.add(region);
                 }
             });
-            for (RegionSnapshot rs : unchangedOrUpdated) {
-                if (!lastRegionMap.containsValue(rs))
-                    addedOrUpdated.add(rs);
-            }
         });
         BlueMapIntegration integration = BlueBridgeCore.getInstance().getBlueMapIntegration();
         integration.addOrUpdate(addedOrUpdated);

@@ -15,13 +15,14 @@ import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import org.bukkit.Bukkit;
+import org.bukkit.World;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class GriefPreventionIntegration {
 
@@ -31,15 +32,33 @@ public class GriefPreventionIntegration {
 
     public void addOrUpdateClaim(Claim claim) {
         //Schedule updates for all child claims
-        if (claim.children != null && !claim.children.isEmpty()) {
-            for (Claim child : claim.children) {
-                FoliaScheduler.runAtLocation(BlueBridgeGP.getInstance(), child.getLesserBoundaryCorner(), () -> {
+        for (Claim child : childClaims(claim)) {
+            FoliaScheduler.runAtLocation(BlueBridgeGP.getInstance(), child.getLesserBoundaryCorner(), () -> {
+                if (child.inDataStore) {
                     addOrUpdateClaim(child);
-                });
-            }
+                }
+            });
         }
 
         ActiveAddonEventHandler.addOrUpdate(convertClaim(claim));
+    }
+
+    public void loadInitialClaims(UUID world) {
+        for (Claim claim : topLevelClaims()) {
+            if (!claim.inDataStore || !isClaimInWorld(claim, world)) {
+                continue;
+            }
+
+            FoliaScheduler.runAtLocation(BlueBridgeGP.getInstance(), claim.getLesserBoundaryCorner(), () -> {
+                if (claim.inDataStore && isClaimInWorld(claim, world)) {
+                    addOrUpdateClaim(claim);
+                }
+            });
+        }
+    }
+
+    private Collection<Claim> topLevelClaims() {
+        return new ArrayList<>(GriefPrevention.instance.dataStore.getClaims());
     }
 
     private RegionSnapshot convertClaim(Claim claim) {
@@ -84,7 +103,31 @@ public class GriefPreventionIntegration {
     }
 
     public List<RegionSnapshot> getAllClaims(UUID world) {
-        return GriefPrevention.instance.dataStore.getClaims().stream().filter(claim -> claim.getLesserBoundaryCorner().getWorld().getUID().equals(world)).flatMap(claim -> Stream.concat(Stream.of(claim.children.toArray(new Claim[0])), Stream.of(claim))).map(claim -> convertClaim(claim)).collect(Collectors.toList());
+        return topLevelClaims().stream()
+                .filter(claim -> isClaimInWorld(claim, world))
+                .flatMap(claim -> claimAndChildren(claim).stream())
+                .filter(claim -> claim.inDataStore)
+                .map(claim -> convertClaim(claim))
+                .collect(Collectors.toList());
+    }
+
+    private List<Claim> claimAndChildren(Claim claim) {
+        List<Claim> claims = new ArrayList<>();
+        claims.add(claim);
+        claims.addAll(childClaims(claim));
+        return claims;
+    }
+
+    private List<Claim> childClaims(Claim claim) {
+        if (claim.children == null || claim.children.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return new ArrayList<>(claim.children);
+    }
+
+    private boolean isClaimInWorld(Claim claim, UUID world) {
+        World claimWorld = claim.getLesserBoundaryCorner().getWorld();
+        return claimWorld != null && claimWorld.getUID().equals(world);
     }
 
 

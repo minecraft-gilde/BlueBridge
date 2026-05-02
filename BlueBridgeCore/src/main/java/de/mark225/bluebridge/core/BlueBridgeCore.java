@@ -53,7 +53,7 @@ public class BlueBridgeCore extends JavaPlugin {
     public void addAllActiveRegions() {
         for (BlueBridgeAddon addon : AddonRegistry.getEventDrivenAddons()) {
             for (UUID world : UpdateTask.worlds.keySet()) {
-                blueMapIntegration.addOrUpdate(addon.fetchSnapshots(world).values());
+                addon.loadInitialSnapshots(world, blueMapIntegration::addOrUpdate);
             }
         }
     }
