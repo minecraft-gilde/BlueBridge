@@ -2,7 +2,6 @@ package de.mark225.bluebridge.worldguard.addon;
 
 import com.flowpowered.math.vector.Vector2d;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
-import com.sk89q.worldedit.math.BlockVector2;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldguard.WorldGuard;
@@ -168,15 +167,6 @@ public class WorldGuardIntegration {
             return list;
         }
         return region.getPoints().stream().map(bv2 -> new Vector2d(bv2.x() + 0.5, bv2.z() + 0.5)).collect(Collectors.toList());
-    }
-
-    private int polygonArea(List<BlockVector2> coordinates) {
-        int size = coordinates.size();
-        int sum = 0;
-        for (int i = 0; i < size; i++) {
-            sum += (coordinates.get(i).x() * coordinates.get((i + 1) % size).z()) - (coordinates.get(i).z() * coordinates.get((i + 1) % size).x());
-        }
-        return Math.abs((int) ((double) sum / 2d));
     }
 
 }

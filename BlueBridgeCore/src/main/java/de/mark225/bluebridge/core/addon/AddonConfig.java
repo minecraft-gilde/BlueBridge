@@ -5,7 +5,6 @@ import de.mark225.bluebridge.core.config.BlueBridgeConfig;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 

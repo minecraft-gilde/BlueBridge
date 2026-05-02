@@ -14,7 +14,6 @@ import de.mark225.bluebridge.worldguard.addon.WorldGuardIntegration;
 import org.bukkit.Bukkit;
 
 import java.math.BigInteger;
-import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;

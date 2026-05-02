@@ -3,7 +3,6 @@ package de.mark225.bluebridge.core.bluemap;
 import com.flowpowered.math.vector.Vector2d;
 import com.flowpowered.math.vector.Vector3d;
 import de.bluecolored.bluemap.api.BlueMapAPI;
-import de.bluecolored.bluemap.api.BlueMapMap;
 import de.bluecolored.bluemap.api.BlueMapWorld;
 import de.bluecolored.bluemap.api.markers.DistanceRangedMarker;
 import de.bluecolored.bluemap.api.markers.ExtrudeMarker;
@@ -71,10 +70,6 @@ public class BlueMapIntegration {
         }
     }
 
-    private String getMarkerSetId(String addon) {
-        return "!BlueBridge_RegionSet#" + addon;
-    }
-
     public void addOrUpdate(Collection<RegionSnapshot> regions) {
         for (RegionSnapshot rs : regions) {
             Shape shape = new Shape(rs.getPoints().toArray(new Vector2d[0]));
@@ -91,10 +86,6 @@ public class BlueMapIntegration {
                 markerSet.getMarkers().remove(getGlobalRegionId(rs.getAddon(), rs.getId(), rs.getWorld().toString()));
             });
         }
-    }
-
-    private Collection<BlueMapMap> getMapsForWorld(UUID world) {
-        return UpdateTask.worlds.get(world).getMaps();
     }
 
     private void addToMarkerSet(MarkerSet ms, RegionSnapshot rs, Shape shape, Vector3d pos) {
