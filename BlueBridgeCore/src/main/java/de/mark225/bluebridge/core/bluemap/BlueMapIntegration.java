@@ -14,6 +14,7 @@ import de.mark225.bluebridge.core.BlueBridgeCore;
 import de.mark225.bluebridge.core.addon.AddonRegistry;
 import de.mark225.bluebridge.core.addon.BlueBridgeAddon;
 import de.mark225.bluebridge.core.region.RegionSnapshot;
+import de.mark225.bluebridge.core.scheduler.FoliaScheduler;
 import de.mark225.bluebridge.core.update.UpdateTask;
 import org.apache.commons.text.StringEscapeUtils;
 import org.bukkit.Bukkit;
@@ -32,7 +33,7 @@ public class BlueMapIntegration {
 
     public void onEnable(BlueMapAPI blueMapAPI) {
         this.blueMapAPI = blueMapAPI;
-        Bukkit.getScheduler().runTask(BlueBridgeCore.getInstance(), () -> {
+        FoliaScheduler.runGlobal(BlueBridgeCore.getInstance(), () -> {
             BlueBridgeCore.getInstance().updateConfig();
             BlueBridgeCore.getInstance().reloadAddons();
             createMarkerSets();

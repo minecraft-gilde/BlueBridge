@@ -1,14 +1,5 @@
-buildscript {
-    repositories {
-        gradlePluginPortal()
-    }
-    dependencies {
-        classpath 'com.gradleup.shadow:shadow-gradle-plugin:8.3.0'
-    }
-}
-
 plugins {
-    id 'com.gradleup.shadow' version '8.3.0'
+    id 'com.gradleup.shadow' version '9.3.2'
 }
 
 
@@ -30,19 +21,5 @@ shadowJar {
     relocate 'org.apache.commons.text', 'de.mark225.shadow.org.apache.commons.text'
     relocate 'org.apache.commons.lang3', 'de.mark225.shadow.org.apache.commons.lang3'
     archiveClassifier = ''
-    def exclude_modules = project
-            .configurations
-            .provided
-            .resolvedConfiguration
-            .getLenientConfiguration()
-            .getAllModuleDependencies()
-            .collect {
-                it.name
-            }
-    dependencies {
-        exclude(dependency {
-            exclude_modules.contains(it.name)
-        })
-    }
 }
 

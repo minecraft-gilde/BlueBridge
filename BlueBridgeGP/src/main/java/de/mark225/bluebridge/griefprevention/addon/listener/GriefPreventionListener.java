@@ -1,13 +1,13 @@
 package de.mark225.bluebridge.griefprevention.addon.listener;
 
 import de.mark225.bluebridge.core.config.BlueBridgeConfig;
+import de.mark225.bluebridge.core.scheduler.FoliaScheduler;
 import de.mark225.bluebridge.griefprevention.BlueBridgeGP;
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.events.ClaimCreatedEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimDeletedEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimExtendEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimResizeEvent;
-import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -55,13 +55,13 @@ public class GriefPreventionListener implements Listener {
     }
 
     public void scheduleUpdate(Claim claim) {
-        Bukkit.getScheduler().runTaskLater(BlueBridgeGP.getInstance(), () -> {
+        FoliaScheduler.runAtLocation(BlueBridgeGP.getInstance(), claim.getLesserBoundaryCorner(), () -> {
             Claim toUpdate = claim;
             if (!toUpdate.inDataStore) return;
             while (toUpdate.parent != null)
                 toUpdate = toUpdate.parent;
             BlueBridgeGP.getInstance().getGPIntegration().addOrUpdateClaim(toUpdate);
-        }, 0l);
+        });
     }
 
 }

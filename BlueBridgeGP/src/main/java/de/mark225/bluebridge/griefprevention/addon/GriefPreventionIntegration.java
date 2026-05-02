@@ -5,6 +5,7 @@ import de.bluecolored.bluemap.api.math.Color;
 import de.mark225.bluebridge.core.addon.ActiveAddonEventHandler;
 import de.mark225.bluebridge.core.region.RegionSnapshot;
 import de.mark225.bluebridge.core.region.RegionSnapshotBuilder;
+import de.mark225.bluebridge.core.scheduler.FoliaScheduler;
 import de.mark225.bluebridge.core.util.BlueBridgeUtils;
 import de.mark225.bluebridge.griefprevention.BlueBridgeGP;
 import de.mark225.bluebridge.griefprevention.addon.listener.GriefPreventionListener;
@@ -32,9 +33,9 @@ public class GriefPreventionIntegration {
         //Schedule updates for all child claims
         if (claim.children != null && !claim.children.isEmpty()) {
             for (Claim child : claim.children) {
-                Bukkit.getScheduler().runTaskLater(BlueBridgeGP.getInstance(), () -> {
+                FoliaScheduler.runAtLocation(BlueBridgeGP.getInstance(), child.getLesserBoundaryCorner(), () -> {
                     addOrUpdateClaim(child);
-                }, 0l);
+                });
             }
         }
 

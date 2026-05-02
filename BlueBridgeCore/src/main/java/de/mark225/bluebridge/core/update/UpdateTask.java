@@ -8,8 +8,8 @@ import de.mark225.bluebridge.core.addon.BlueBridgeAddon;
 import de.mark225.bluebridge.core.bluemap.BlueMapIntegration;
 import de.mark225.bluebridge.core.config.BlueBridgeConfig;
 import de.mark225.bluebridge.core.region.RegionSnapshot;
-import org.bukkit.Bukkit;
-import org.bukkit.scheduler.BukkitRunnable;
+import de.mark225.bluebridge.core.scheduler.FoliaScheduler;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,13 +17,15 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public class UpdateTask extends BukkitRunnable {
+public class UpdateTask implements Runnable {
 
     public static ConcurrentMap<UUID, BlueMapWorld> worlds = new ConcurrentHashMap<>();
 
     private static ConcurrentMap<String, ConcurrentMap<String, RegionSnapshot>> lastSnapshots = new ConcurrentHashMap<>();
 
-    private static UpdateTask currentTask;
+    private static ScheduledTask currentTask;
+
+    private static boolean scheduledOrRunning;
 
     private static boolean locked = true;
 
@@ -32,14 +34,25 @@ public class UpdateTask extends BukkitRunnable {
     }
 
     public static synchronized void createAndSchedule(boolean instant) {
-        if (currentTask == null && !locked) {
-            currentTask = new UpdateTask();
-            currentTask.runTaskLater(BlueBridgeCore.getInstance(), instant ? 0L : BlueBridgeConfig.updateInterval());
+        if (!scheduledOrRunning && !locked) {
+            scheduledOrRunning = true;
+            if (instant) {
+                FoliaScheduler.runGlobal(BlueBridgeCore.getInstance(), new UpdateTask());
+            } else {
+                currentTask = FoliaScheduler.runGlobalLater(BlueBridgeCore.getInstance(), new UpdateTask(), BlueBridgeConfig.updateInterval());
+            }
         }
     }
 
     public static synchronized void setLocked(boolean locked) {
         UpdateTask.locked = locked;
+        if (locked) {
+            if (currentTask != null) {
+                currentTask.cancel();
+                currentTask = null;
+            }
+            scheduledOrRunning = false;
+        }
     }
 
     private UpdateTask() {
@@ -48,18 +61,32 @@ public class UpdateTask extends BukkitRunnable {
 
     @Override
     public void run() {
+        synchronized (UpdateTask.class) {
+            currentTask = null;
+        }
+        if (locked) {
+            finish();
+            return;
+        }
+
         List<BlueBridgeAddon> addons = AddonRegistry.getIfActive(false);
         ConcurrentMap<String, ConcurrentMap<String, RegionSnapshot>> newSnapshots = new ConcurrentHashMap<>();
         for (BlueBridgeAddon addon : addons) {
             if(addon.supportsAsync()) continue;
             collectSnapshots(addon, newSnapshots);
         }
-        Bukkit.getScheduler().runTaskAsynchronously(BlueBridgeCore.getInstance(), () ->{
+
+        if (addons.stream().noneMatch(BlueBridgeAddon::supportsAsync)) {
+            doUpdate(newSnapshots);
+            return;
+        }
+
+        FoliaScheduler.runAsync(BlueBridgeCore.getInstance(), () ->{
             for (BlueBridgeAddon addon : addons) {
                 if(!addon.supportsAsync()) continue;
                 collectSnapshots(addon, newSnapshots);
             }
-            doUpdate(newSnapshots);
+            FoliaScheduler.runGlobal(BlueBridgeCore.getInstance(), () -> doUpdate(newSnapshots));
         });
     }
 
@@ -118,8 +145,13 @@ public class UpdateTask extends BukkitRunnable {
     }
 
     public synchronized void reschedule() {
-        currentTask = null;
+        finish();
         BlueBridgeCore.getInstance().reschedule();
+    }
+
+    private static synchronized void finish() {
+        currentTask = null;
+        scheduledOrRunning = false;
     }
 
 }

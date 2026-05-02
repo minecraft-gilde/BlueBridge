@@ -1,5 +1,5 @@
 repositories {
-    maven { url "https://maven.enginehub.org/repo/" }
+    maven { url = uri("https://maven.enginehub.org/repo/") }
 }
 
 dependencies {

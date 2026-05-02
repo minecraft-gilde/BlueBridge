@@ -2,6 +2,7 @@ name: BlueBridgeGP
 main: de.mark225.bluebridge.griefprevention.BlueBridgeGP
 version: ${gradleVersion}
 authors: [ ${ contributors } ]
-website: https://github.com/Mark-225/BlueBridge
-api-version: 1.13
+website: https://github.com/minecraft-gilde/BlueBridge
+api-version: '1.21.11'
+folia-supported: true
 depend: [ "BlueBridgeCore", "GriefPrevention" ]
