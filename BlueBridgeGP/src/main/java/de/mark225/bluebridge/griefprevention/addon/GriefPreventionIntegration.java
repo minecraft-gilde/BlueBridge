@@ -26,6 +26,9 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class GriefPreventionIntegration {
+    private static final float SUBCLAIM_LAYER_HEIGHT_STEP = 0.25f;
+    private static final float SUBCLAIM_FILL_ALPHA_STEP = 0.08f;
+    private static final float SUBCLAIM_BRIGHTNESS_STEP = 0.08f;
 
     public void init() {
         Bukkit.getPluginManager().registerEvents(new GriefPreventionListener(), BlueBridgeGP.getInstance());
@@ -74,20 +77,30 @@ public class GriefPreventionIntegration {
         BoundingBox boundingBox = trimmedBoundingBox(claim);
         List<Vector2d> points = boundingBoxToPolyCorners(boundingBox);
         boolean adminClaim = ClaimUtils.isDisplayAdminClaim(claim);
+        boolean subclaim = claim.parent != null;
         String shortName = adminClaim ? BlueBridgeGPConfig.getInstance().adminDisplayName() : claim.getOwnerName() + "'s Claim";
         String label = BlueBridgeUtils.replace(new ClaimStringLookup(claim), BlueBridgeGPConfig.getInstance().htmlDisplay());
         int claimFloor = claim.getLesserBoundaryCorner().getBlockY();
-        int claimCeiling = claim.getGreaterBoundaryCorner().getWorld().getMaxHeight();
+        int claimCeiling = claim.getGreaterBoundaryCorner().getBlockY() + 1;
         boolean extrude = BlueBridgeGPConfig.getInstance().defaultExtrude();
         float heightModifier = 0f;
         //Adjust height if plugin is configured to layer child claims and 3D markers are off
         if (!extrude && BlueBridgeGPConfig.getInstance().layerChildren()) {
-            //Add 1/16 of a block per layer depth
-            heightModifier = (float) layer * 0.0625f;
+            heightModifier = (float) layer * SUBCLAIM_LAYER_HEIGHT_STEP;
         }
 
-        Color borderColor = adminClaim ? BlueBridgeGPConfig.getInstance().adminOutlineColor() : BlueBridgeGPConfig.getInstance().defaultOutlineColor();
-        Color fillColor = adminClaim ? BlueBridgeGPConfig.getInstance().adminFillColor() : BlueBridgeGPConfig.getInstance().defaultColor();
+        Color borderColor;
+        Color fillColor;
+        if (adminClaim) {
+            borderColor = BlueBridgeGPConfig.getInstance().adminOutlineColor();
+            fillColor = BlueBridgeGPConfig.getInstance().adminFillColor();
+        } else if (subclaim) {
+            borderColor = adjustSubclaimColor(BlueBridgeGPConfig.getInstance().defaultOutlineColor(), layer, false);
+            fillColor = adjustSubclaimColor(BlueBridgeGPConfig.getInstance().defaultColor(), layer, true);
+        } else {
+            borderColor = BlueBridgeGPConfig.getInstance().defaultOutlineColor();
+            fillColor = BlueBridgeGPConfig.getInstance().defaultColor();
+        }
 
         return new RegionSnapshotBuilder(BlueBridgeGP.getInstance().getAddon(), claim.getID().toString(), points, claim.getLesserBoundaryCorner().getWorld().getUID())
                 .setHtmlDisplay(label)
@@ -116,7 +129,9 @@ public class GriefPreventionIntegration {
     private List<Claim> claimAndChildren(Claim claim) {
         List<Claim> claims = new ArrayList<>();
         claims.add(claim);
-        claims.addAll(childClaims(claim));
+        for (Claim child : childClaims(claim)) {
+            claims.addAll(claimAndChildren(child));
+        }
         return claims;
     }
 
@@ -152,6 +167,20 @@ public class GriefPreventionIntegration {
         points.add(new Vector2d(bb.getMaxX() + 1, bb.getMaxZ() + 1));
         points.add(new Vector2d(bb.getMinX(), bb.getMaxZ() + 1));
         return points;
+    }
+
+    private Color adjustSubclaimColor(Color color, int layer, boolean fill) {
+        int depth = Math.max(0, layer - 1);
+        int red = brighten(color.getRed(), depth);
+        int green = brighten(color.getGreen(), depth);
+        int blue = brighten(color.getBlue(), depth);
+        float alpha = fill ? Math.min(0.85f, color.getAlpha() + depth * SUBCLAIM_FILL_ALPHA_STEP) : color.getAlpha();
+        return new Color(red, green, blue, alpha);
+    }
+
+    private int brighten(int channel, int depth) {
+        float amount = Math.min(0.35f, depth * SUBCLAIM_BRIGHTNESS_STEP);
+        return Math.min(255, Math.round(channel + (255 - channel) * amount));
     }
 
 
