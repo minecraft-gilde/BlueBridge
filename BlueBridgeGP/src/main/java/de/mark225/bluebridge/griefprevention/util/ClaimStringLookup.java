@@ -55,7 +55,7 @@ public class ClaimStringLookup extends StringLookupWrapper {
     }
 
     private String getOwner(String adminOverride){
-        return BlueBridgeUtils.escapeHtml(claim.isAdminClaim() ? adminOverride : claim.getOwnerName());
+        return BlueBridgeUtils.escapeHtml(ClaimUtils.isDisplayAdminClaim(claim) ? adminOverride : claim.getOwnerName());
     }
 
     private String getSize(boolean volume){
